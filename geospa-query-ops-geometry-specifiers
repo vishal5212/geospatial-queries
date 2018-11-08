@@ -1,0 +1,121 @@
+$box
+Specifies a rectangle for a geospatial $geoWithin query to return documents that are within the bounds of the rectangle, according to their point-based location data. When used with the $box operator, $geoWithin returns documents based on grid coordinates and does not query for GeoJSON shapes.
+
+To use the $box operator, you must specify the bottom left and top right corners of the rectangle in an array object:
+
+{
+  <location field>: {
+     $geoWithin: {
+        $box: [
+          [ <bottom left coordinates> ],
+          [ <upper right coordinates> ]
+        ]
+     }
+  }
+}
+
+The query calculates distances using flat (planar) geometry.
+
+Applications can use $box without having a geospatial index. However, geospatial indexes support much faster queries than the unindexed equivalents.
+
+Only the 2d geospatial index supports $box.
+
+Example
+The following example query returns all documents that are within the box having points at: [ 0 , 0 ], [ 0 , 100 ], [ 100 , 0 ], and [ 100 , 100 ].
+
+db.places.find( {
+   loc: { $geoWithin: { $box:  [ [ 0, 0 ], [ 100, 100 ] ] } }
+} )
+
+$center
+The $center operator specifies a circle for a $geoWithin query. The query returns legacy coordinate pairs that are within the bounds of the circle. The operator does not return GeoJSON objects.
+
+To use the $center operator, specify an array that contains:
+
+The grid coordinates of the circle’s center point, and
+The circle’s radius, as measured in the units used by the coordinate system.
+{
+   <location field>: {
+      $geoWithin: { $center: [ [ <x>, <y> ] , <radius> ] }
+   }
+}
+IMPORTANT
+
+If you use longitude and latitude, specify longitude first.
+
+Behavior
+The query calculates distances using flat (planar) geometry.
+
+Applications can use $center without having a geospatial index. However, geospatial indexes support much faster queries than the unindexed equivalents.
+
+Only the 2d geospatial index supports $center.
+
+Example
+The following example query returns all documents that have coordinates that exist within the circle centered on [ -74, 40.74 ] and with a radius of 10:
+
+db.places.find(
+   { loc: { $geoWithin: { $center: [ [-74, 40.74], 10 ] } } }
+)
+
+
+$centerSphere
+Defines a circle for a geospatial query that uses spherical geometry. The query returns documents that are within the bounds of the circle. You can use the $centerSphere operator on both GeoJSON objects and legacy coordinate pairs.
+
+To use $centerSphere, specify an array that contains:
+
+The grid coordinates of the circle’s center point, and
+The circle’s radius measured in radians. To calculate radians, see Calculate Distance Using Spherical Geometry.
+{
+   <location field>: {
+      $geoWithin: { $centerSphere: [ [ <x>, <y> ], <radius> ] }
+   }
+}
+
+
+Behavior
+Applications can use $centerSphere without having a geospatial index. However, geospatial indexes support much faster queries than the unindexed equivalents.
+
+Both 2dsphere and 2d geospatial indexes support $centerSphere.
+
+Example
+The following example queries grid coordinates and returns all documents within a 10 mile radius of longitude 88 W and latitude 30 N. The query converts the distance to radians by dividing by the approximate equatorial radius of the earth, 3963.2 miles:
+
+db.places.find( {
+  loc: { $geoWithin: { $centerSphere: [ [ -88, 30 ], 10/3963.2 ] } }
+} )
+
+
+$geometry
+Changed in version 3.0: Add support to specify single-ringed GeoJSON polygons with areas greater than a single hemisphere.
+
+The $geometry operator specifies a GeoJSON geometry for use with the following geospatial query operators: $geoWithin, $geoIntersects, $near, and $nearSphere. $geometry uses EPSG:4326 as the default coordinate reference system (CRS).
+
+To specify GeoJSON objects with the default CRS, use the following prototype for $geometry:
+
+$geometry: {
+   type: "<GeoJSON object type>",
+   coordinates: [ <coordinates> ]
+}
+New in version 3.0: To specify a single-ringed GeoJSON polygon with a custom MongoDB CRS, use the following prototype (available only for $geoWithin and $geoIntersects):
+
+$geometry: {
+   type: "Polygon",
+   coordinates: [ <coordinates> ],
+   crs: {
+      type: "name",
+      properties: { name: "urn:x-mongodb:crs:strictwinding:EPSG:4326" }
+   }
+}
+The custom MongoDB coordinate reference system has a strict counter-clockwise winding order.
+
+IMPORTANT
+
+If specifying latitude and longitude coordinates, list the longitude first and then latitude:
+
+Valid longitude values are between -180 and 180, both inclusive.
+Valid latitude values are between -90 and 90 (both inclusive).
+
+
+
+
+
