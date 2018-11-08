@@ -1,0 +1,5 @@
+db.map.createIndex({"location": "2d"});
+
+db.map.find({"location":{"$nearSphere":[ -0.127748, 51.507333 ]}});
+
+db.map.find({"location":{"$near":[ -0.127748, 51.507333 ]}});
