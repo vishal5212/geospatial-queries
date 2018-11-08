@@ -1,0 +1,180 @@
+$geoIntersects
+selects documents whose geospatial data intersects with a specified geojson object
+$geoIntersects uses $geometry to specify the geojson object
+ To specify a GeoJSON polygons or multipolygons using the default coordinate reference system (CRS), use the following syntax:
+
+{
+  <location field>: {
+     $geoIntersects: {
+        $geometry: {
+           type: "<GeoJSON object type>" ,
+           coordinates: [ <coordinates> ]
+        }
+     }
+  }
+}
+
+For $geoIntersects queries that specify GeoJSON geometries with areas greater than a single hemisphere, the use of the default CRS results in queries for the complementary geometries.
+
+New in version 3.0: To specify a single-ringed GeoJSON polygon with a custom MongoDB CRS, use the following prototype that specifies the custom MongoDB CRS in the $geometry expression:
+
+{
+  <location field>: {
+     $geoIntersects: {
+        $geometry: {
+           type: "Polygon" ,
+           coordinates: [ <coordinates> ],
+           crs: {
+              type: "name",
+              properties: { name: "urn:x-mongodb:crs:strictwinding:EPSG:4326" }
+           }
+        }
+     }
+  }
+}
+
+
+Geospatial Indexes
+$geoIntersects uses spherical geometry. $geoIntersects does not require a geospatial index. However, a geospatial index will improve query performance. Only the 2dsphere geospatial index supports $geoIntersects.
+
+Degenerate Geometry
+$geoIntersects does not guarantee that it will consider a polygon to intersect with its own edges; its own vertices; or another polygon sharing vertices or edges but no interior space.
+
+“Big” Polygons
+For $geoIntersects, if you specify a single-ringed polygon that has an area greater than a single hemisphere, include the custom MongoDB coordinate reference system in the $geometry expression; otherwise, $geoIntersects queries for the complementary geometry. For all other GeoJSON polygons with areas greater than a hemisphere, $geoIntersects queries for the complementary geometry.
+
+$geoWithin
+Selects documents with geospatial data that exists entirely within a specified shape.
+( Rest almost same as $geoIntersects)
+
+
+
+$near
+returns documents from nearest to farthest for a specified point
+The $near operator can specify either a GeoJSON point or legacy coordinate point.
+
+
+$near requires a geospatial index:
+
+2dsphere index if specifying a GeoJSON point,
+2d index if specifying a point using legacy coordinates.
+To specify a GeoJSON point, $near operator requires a 2dsphere index and has the following syntax:
+
+{
+   <location field>: {
+     $near: {
+       $geometry: {
+          type: "Point" ,
+          coordinates: [ <longitude> , <latitude> ]
+       },
+       $maxDistance: <distance in meters>,
+       $minDistance: <distance in meters>
+     }
+   }
+}
+
+
+If specifying latitude and longitude coordinates, list the longitude first and then latitude:
+
+Valid longitude values are between -180 and 180, both inclusive.
+Valid latitude values are between -90 and 90 (both inclusive).
+
+
+To specify a point using legacy coordinates, $near requires a 2d index and has the following syntax:
+
+
+{
+  $near: [ <x>, <y> ],
+  $maxDistance: <distance in radians>
+}
+
+
+Special Indexes Restriction
+You cannot combine the $near operator, which requires a special geospatial index, with a query operator or command that requires another special index. For example you cannot combine $near with the $text query.
+
+Sharded Collections
+Starting in MongoDB 4.0, $near queries are supported for sharded collections.
+
+In earlier MongoDB versions, $near queries are not supported for sharded collections; instead, for sharded clusters, you must use either the $geoNear aggregation stage and the deprecated geoNear command.
+
+Sort Operation
+$near sorts documents by distance. If you also include a sort() for the query, sort() re-orders the matching documents, effectively overriding the sort operation already performed by $near. When using sort() with geospatial queries, consider using $geoWithin operator, which does not sort documents, instead of $near.
+
+
+
+The following example returns documents that are at least 1000 meters from and at most 5000 meters from the specified GeoJSON point, sorted from nearest to farthest:
+
+db.places.find(
+   {
+     location:
+       { $near :
+          {
+            $geometry: { type: "Point",  coordinates: [ -73.9667, 40.78 ] },
+            $minDistance: 1000,
+            $maxDistance: 5000
+          }
+       }
+   }
+)
+
+
+difference between 2d index and 2dsphere index?
+
+2dsphere indexes support:
+
+ - Calculations on a sphere
+ - Both GeoJSON objects and legacy coordinate pairs
+ - A compound index with scalar index fields (i.e. ascending or
+   descending) as a prefix or suffix of the 2dsphere index field
+2d indexes support:
+
+ - Calculations using flat geometry 
+ - Legacy coordinate pairs (i.e.,    geospatial points on a flat
+   coordinate system)  
+ - A compound index with    only one additional    field, as a suffix of
+   the 2d index field
+
+
+for 2dsphere:
+
+location : { 
+      type : "Point" ,
+      coordinates : [10,45] 
+}
+or for 2d index:
+
+location : [10,45]
+
+
+$nearSphere
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
