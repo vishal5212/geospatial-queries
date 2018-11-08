@@ -147,7 +147,56 @@ location : [10,45]
 
 
 $nearSphere
+same as $near except for the following difference
+The keyword is sphere to differentiate between $near and $nearSphere.
 
+As you are aware, $nearSphere is stated to calculate distance using spherical geometry. This is related to the Earth map projection (distortion). Where MongoDB 2d indexes is based on Cartesian and MongoDB 2dsphere indexes is based on Geodesic.
+
+Enough theory, let's use some examples. Let's say we have two documents as below:
+
+db.map.insert({ "_id": "Westfield London", "location": [ -0.22157, 51.507176 ] });
+db.map.insert({ "_id": "Green Lanes Shopping Centre", "location": [ -0.098092, 51.576198 ] });
+The manual for both operators specify that we can use:
+
+2dsphere index for location data defined as GeoJSON points
+2d index for location data defined as legacy coordinate pairs
+Index: 2dsphere , Query: GeoJSON
+
+db.map.createIndex({"location": "2dsphere"});
+
+db.map.find({"location":{"$nearSphere":{"$geometry":{"type":"Point", "coordinates":[ -0.127748, 51.507333 ] }}}});
+
+db.map.find({"location":{"$near":{"$geometry":{"type":"Point", "coordinates":[ -0.127748, 51.507333 ]}}}});
+In this case, both queries will return the same result, because the index is stored in 2dsphere.
+
+Result:
+[ /* $nearSphere */
+    {"_id" : "Westfield London"},
+    {"_id" : "Green Lanes Shopping Centre"}
+]
+[ /* $near */
+    {"_id" : "Westfield London"},
+    {"_id" : "Green Lanes Shopping Centre"}
+]
+Index: 2d , Query: Legacy Coordinates
+
+db.map.createIndex({"location": "2d"});
+
+db.map.find({"location":{"$nearSphere":[ -0.127748, 51.507333 ]}});
+
+db.map.find({"location":{"$near":[ -0.127748, 51.507333 ]}});
+This is where the distinction happens, the result for $nearSphere is calculated spherically despite the index, while $near is calculated in flat projection.
+
+Result:
+
+[ /* $nearSphere */
+    {"_id" : "Westfield London"},
+    {"_id" : "Green Lanes Shopping Centre"}
+]
+[ /* $near */
+    {"_id" : "Green Lanes Shopping Centre"},
+    {"_id" : "Westfield London"}
+]
 
 
 
